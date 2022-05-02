@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_portal/flutter_portal.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,6 +52,14 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  bool _usePortal = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Timer.periodic(const Duration(seconds: 1), (_) => _incrementCounter());
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -58,6 +69,12 @@ class _MyHomePageState extends State<MyHomePage> {
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
       _counter++;
+    });
+  }
+
+  void _toggle() {
+    setState(() {
+      _usePortal = !_usePortal;
     });
   }
 
@@ -73,42 +90,45 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('_usePortal = $_usePortal, _counter = $_counter'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+      body: Portal(
+        child: ListView.builder(
+          itemBuilder: (context, index) {
+            final stack = Stack(children: [
+              for (var i = 0; i < 8; i++)
+                Positioned(
+                  left: index % 10 * 20 + i * 40,
+                  width: 20,
+                  height: 48,
+                  child: Container(
+                      color: HSLColor.fromAHSL(1, index * 10 % 360, 1, 0.5)
+                          .toColor()),
+                )
+            ]);
+
+            return SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: _usePortal
+                    ? PortalTarget(
+                        anchor: const Aligned(
+                          follower: Alignment.topLeft,
+                          target: Alignment.topLeft,
+                        ),
+                        child: const SizedBox(width: 100, height: 48),
+                        portalFollower: stack)
+                    : stack);
+          },
+          itemExtent: 48,
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: _toggle,
+        tooltip: 'Toggle Portal',
+        child: _usePortal
+            ? const Icon(Icons.radio_button_checked)
+            : const Icon(Icons.radio_button_unchecked),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
